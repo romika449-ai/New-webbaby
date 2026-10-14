@@ -1,0 +1,542 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glass Calendar · Monthly Tick & Notes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 30% 20%, #b8d8ff, #a0c0f0 40%, #7e9cd8 80%);
+      padding: 1.5rem;
+    }
+
+    /* glassmorphism card */
+    .glass-container {
+      width: 100%;
+      max-width: 1200px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border-radius: 2.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+      padding: 2rem 2rem 2rem 2rem;
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 600;
+      color: #1e2b4f;
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.7);
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.8rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .month-selector {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(8px);
+      padding: 0.4rem 0.8rem;
+      border-radius: 3rem;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .month-selector button {
+      background: rgba(255, 255, 255, 0.6);
+      border: none;
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 50%;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #1e2b4f;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.15s;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      line-height: 1;
+    }
+
+    .month-selector button:hover {
+      background: white;
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .month-selector span {
+      font-size: 1.3rem;
+      font-weight: 600;
+      min-width: 160px;
+      text-align: center;
+      color: #1e2b4f;
+      text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6);
+    }
+
+    /* calendar grid */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.8rem;
+      margin-bottom: 2rem;
+    }
+
+    .weekday {
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #1e2b4f;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(5px);
+      padding: 0.6rem 0;
+      border-radius: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+    }
+
+    /* day card */
+    .day-cell {
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 1.5rem;
+      padding: 0.6rem 0.5rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+      transition: all 0.15s;
+      min-height: 150px;
+    }
+
+    .day-cell:hover {
+      background: rgba(255, 255, 255, 0.45);
+      box-shadow: 0 12px 22px rgba(0, 0, 0, 0.1), inset 0 0 0 1px white;
+      transform: translateY(-2px);
+    }
+
+    .day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      padding: 0 0.15rem;
+    }
+
+    .day-number {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #1e2b4f;
+      text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6);
+      line-height: 1.2;
+    }
+
+    /* custom tick checkbox */
+    .tick-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 0.6rem;
+      border: 1.5px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .tick-checkbox:checked {
+      background: #4f7df3;
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(79, 125, 243, 0.4);
+    }
+
+    .tick-checkbox:checked::after {
+      content: "✓";
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      display: block;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* notes textarea */
+    .day-notes {
+      width: 100%;
+      flex: 1;
+      background: rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 1rem;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.8rem;
+      color: #0b1a33;
+      resize: none;
+      outline: none;
+      transition: 0.15s;
+      font-family: inherit;
+      line-height: 1.4;
+      backdrop-filter: blur(4px);
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.02);
+      min-height: 70px;
+    }
+
+    .day-notes::placeholder {
+      color: rgba(30, 43, 79, 0.45);
+      font-style: italic;
+      font-size: 0.75rem;
+    }
+
+    .day-notes:focus {
+      background: rgba(255, 255, 255, 0.7);
+      border-color: #4f7df3;
+      box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.2);
+    }
+
+    /* empty days (padding) */
+    .day-cell.empty {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px dashed rgba(255, 255, 255, 0.4);
+      box-shadow: none;
+      backdrop-filter: blur(2px);
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .day-cell.empty .day-header,
+    .day-cell.empty .day-notes {
+      visibility: hidden;
+    }
+
+    /* small reset / footer */
+    .footer-note {
+      margin-top: 1.2rem;
+      text-align: right;
+      font-size: 0.8rem;
+      color: #1e2b4f;
+      opacity: 0.7;
+      text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.02em;
+    }
+
+    /* responsiveness */
+    @media (max-width: 800px) {
+      .glass-container {
+        padding: 1.2rem;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .month-selector span {
+        font-size: 1rem;
+        min-width: 120px;
+      }
+
+      .calendar-grid {
+        gap: 0.4rem;
+      }
+
+      .day-cell {
+        min-height: 130px;
+        padding: 0.4rem;
+      }
+
+      .day-notes {
+        font-size: 0.7rem;
+        padding: 0.3rem;
+      }
+
+      .day-number {
+        font-size: 0.9rem;
+      }
+
+      .tick-checkbox {
+        width: 1.2rem;
+        height: 1.2rem;
+      }
+
+      .tick-checkbox:checked::after {
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 550px) {
+      .calendar-grid {
+        gap: 0.2rem;
+      }
+
+      .day-cell {
+        min-height: 100px;
+        border-radius: 1rem;
+      }
+
+      .weekday {
+        font-size: 0.65rem;
+        padding: 0.3rem 0;
+      }
+
+      .day-notes {
+        font-size: 0.65rem;
+        min-height: 50px;
+      }
+
+      .day-header {
+        margin-bottom: 0.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="glass-container">
+    <h1>
+      📅 Monthly Tracker
+      <div class="month-selector">
+        <button id="prevMonth" aria-label="Previous month">←</button>
+        <span id="monthDisplay">November 2024</span>
+        <button id="nextMonth" aria-label="Next month">→</button>
+      </div>
+    </h1>
+
+    <!-- calendar grid (weekdays will be injected) -->
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="footer-note">✓ tick dates · write daily notes</div>
+  </div>
+
+  <script>
+    (function() {
+      // --- state ---
+      let currentDate = new Date();
+      let currentYear = currentDate.getFullYear();
+      let currentMonth = currentDate.getMonth(); // 0-11
+
+      // store for ticks & notes: key = "YYYY-M-D" -> { ticked: boolean, note: string }
+      const storageKey = 'glassCalendarData';
+      let calendarData = {};
+
+      // load from localStorage
+      function loadData() {
+        try {
+          const stored = localStorage.getItem(storageKey);
+          if (stored) {
+            calendarData = JSON.parse(stored);
+          } else {
+            calendarData = {};
+          }
+        } catch (e) {
+          calendarData = {};
+        }
+      }
+
+      // save to localStorage
+      function saveData() {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(calendarData));
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      // get key for a specific date
+      function getKey(year, month, day) {
+        return `${year}-${month}-${day}`;
+      }
+
+      // ensure entry exists and return it
+      function getEntry(year, month, day) {
+        const key = getKey(year, month, day);
+        if (!calendarData[key]) {
+          calendarData[key] = { ticked: false, note: '' };
+        }
+        return calendarData[key];
+      }
+
+      // update entry and save
+      function updateEntry(year, month, day, field, value) {
+        const key = getKey(year, month, day);
+        if (!calendarData[key]) {
+          calendarData[key] = { ticked: false, note: '' };
+        }
+        calendarData[key][field] = value;
+        saveData();
+      }
+
+      // --- render calendar ---
+      const calendarGrid = document.getElementById('calendarGrid');
+      const monthDisplay = document.getElementById('monthDisplay');
+
+      function getMonthName(monthIndex) {
+        const months = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        return months[monthIndex];
+      }
+
+      function renderCalendar() {
+        // update header text
+        monthDisplay.textContent = `${getMonthName(currentMonth)} ${currentYear}`;
+
+        // clear grid
+        calendarGrid.innerHTML = '';
+
+        // 1. add weekday headers (Mon-Sun)
+        const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        weekdays.forEach(day => {
+          const weekdayDiv = document.createElement('div');
+          weekdayDiv.className = 'weekday';
+          weekdayDiv.textContent = day;
+          calendarGrid.appendChild(weekdayDiv);
+        });
+
+        // 2. get first day of month (0 = Sunday, 1 = Monday, ...)
+        const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay(); // 0-6
+        // convert to Monday-first index: if 0 (Sun) -> 6, else 1-6 -> 0-5
+        const startOffset = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1; // 0 = Monday, 6 = Sunday
+
+        // 3. days in month
+        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+        // 4. add empty cells for offset (Mon-Sun alignment)
+        for (let i = 0; i < startOffset; i++) {
+          const emptyCell = document.createElement('div');
+          emptyCell.className = 'day-cell empty';
+          // add minimal content for consistent height (hidden)
+          emptyCell.innerHTML = `
+            <div class="day-header">
+              <span class="day-number"></span>
+              <input type="checkbox" class="tick-checkbox" disabled>
+            </div>
+            <textarea class="day-notes" placeholder="—" disabled></textarea>
+          `;
+          calendarGrid.appendChild(emptyCell);
+        }
+
+        // 5. create day cells
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dayCell = document.createElement('div');
+          dayCell.className = 'day-cell';
+
+          // fetch stored data
+          const entry = getEntry(currentYear, currentMonth, day);
+
+          // day header with number + tick checkbox
+          const headerDiv = document.createElement('div');
+          headerDiv.className = 'day-header';
+
+          const dayNumberSpan = document.createElement('span');
+          dayNumberSpan.className = 'day-number';
+          dayNumberSpan.textContent = day;
+
+          const tickCheckbox = document.createElement('input');
+          tickCheckbox.type = 'checkbox';
+          tickCheckbox.className = 'tick-checkbox';
+          tickCheckbox.checked = entry.ticked || false;
+
+          // tick event
+          tickCheckbox.addEventListener('change', (e) => {
+            updateEntry(currentYear, currentMonth, day, 'ticked', e.target.checked);
+          });
+
+          headerDiv.appendChild(dayNumberSpan);
+          headerDiv.appendChild(tickCheckbox);
+
+          // notes textarea
+          const textarea = document.createElement('textarea');
+          textarea.className = 'day-notes';
+          textarea.placeholder = 'Write note...';
+          textarea.value = entry.note || '';
+
+          // note event (save on input)
+          textarea.addEventListener('input', (e) => {
+            updateEntry(currentYear, currentMonth, day, 'note', e.target.value);
+          });
+
+          dayCell.appendChild(headerDiv);
+          dayCell.appendChild(textarea);
+          calendarGrid.appendChild(dayCell);
+        }
+
+        // 6. fill remaining cells in the last row (optional, but keeps grid nice)
+        const totalCells = startOffset + daysInMonth;
+        const totalSlots = Math.ceil(totalCells / 7) * 7; // 7 columns per row
+        const remainingEmpty = totalSlots - totalCells;
+
+        for (let i = 0; i < remainingEmpty; i++) {
+          const emptyCell = document.createElement('div');
+          emptyCell.className = 'day-cell empty';
+          emptyCell.innerHTML = `
+            <div class="day-header">
+              <span class="day-number"></span>
+              <input type="checkbox" class="tick-checkbox" disabled>
+            </div>
+            <textarea class="day-notes" placeholder="—" disabled></textarea>
+          `;
+          calendarGrid.appendChild(emptyCell);
+        }
+      }
+
+      // --- navigation ---
+      document.getElementById('prevMonth').addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar();
+      });
+
+      document.getElementById('nextMonth').addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar();
+      });
+
+      // --- initial load ---
+      loadData();
+      // set to current month/year (already set from Date)
+      renderCalendar();
+
+      // optional: re-render if storage changes from another tab (not required, but nice)
+      window.addEventListener('storage', (e) => {
+        if (e.key === storageKey) {
+          loadData();
+          renderCalendar();
+        }
+      });
+    })();
+  </script>
+</body>
+  </html>
